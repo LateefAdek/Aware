@@ -102,10 +102,10 @@ function InputField({
   );
 }
 
-// Avatar with initials + gradient background
 function Avatar({ name, size = 80 }: { name: string; size?: number }) {
   const initials = name
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .toUpperCase()
@@ -128,12 +128,11 @@ function Avatar({ name, size = 80 }: { name: string; size?: number }) {
       flexShrink: 0,
       userSelect: "none",
     }}>
-      {initials || "?"}
+      {initials || "👤"}
     </div>
   );
 }
 
-// Stat pill shown on profile hero
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
@@ -193,14 +192,15 @@ const YEAR_OPTIONS = [
 ];
 
 export default function ProfilePage() {
-  const [firstName, setFirstName]   = useState("Lateef");
-  const [lastName, setLastName]     = useState("Adek");
-  const [email]                     = useState("lateef@email.com");
-  const [university, setUniversity] = useState("University of Lagos");
-  const [year, setYear]             = useState("Year 2");
+  // All empty by default — filled in by the user
+  const [firstName, setFirstName]   = useState("");
+  const [lastName, setLastName]     = useState("");
+  const [email]                     = useState("");
+  const [university, setUniversity] = useState("Select your university");
+  const [year, setYear]             = useState("Select year");
   const [bio, setBio]               = useState("");
   const [saved, setSaved]           = useState(false);
-  const [editMode, setEditMode]     = useState(false);
+  const [editMode, setEditMode]     = useState(true); // start in edit mode for new users
 
   const fullName = `${firstName} ${lastName}`.trim();
 
@@ -209,6 +209,8 @@ export default function ProfilePage() {
     setEditMode(false);
     setTimeout(() => setSaved(false), 3000);
   };
+
+  const hasProfile = firstName || lastName;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
@@ -241,13 +243,10 @@ export default function ProfilePage() {
         alignItems: "center",
         gap: "20px",
         textAlign: "center",
-        // Subtle gradient tint on hero
         background: "linear-gradient(160deg, rgba(199,184,234,0.07) 0%, rgba(95,168,211,0.07) 100%)",
       }}>
-        {/* Avatar */}
         <div style={{ position: "relative" }}>
-          <Avatar name={fullName || "?"} size={88} />
-          {/* Edit badge */}
+          <Avatar name={fullName} size={88} />
           <button
             onClick={() => setEditMode(true)}
             style={{
@@ -272,19 +271,20 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* Name + university */}
         <div>
           <h2 style={{
             fontSize: "22px",
             fontWeight: 700,
-            color: "#1e293b",
+            color: hasProfile ? "#1e293b" : "#b0bcbc",
             letterSpacing: "-0.01em",
             marginBottom: "4px",
           }}>
-            {fullName || "Your Name"}
+            {hasProfile ? fullName : "Your name here"}
           </h2>
           <p style={{ fontSize: "14px", color: "#8fa0a0", fontWeight: 500 }}>
-            {year !== "Select year" ? year : ""}{university !== "Select your university" ? ` · ${university}` : ""}
+            {year !== "Select year" ? year : ""}
+            {university !== "Select your university" ? ` · ${university}` : ""}
+            {!hasProfile && "Complete your profile below"}
           </p>
           {bio && (
             <p style={{
@@ -295,24 +295,22 @@ export default function ProfilePage() {
               maxWidth: "320px",
               fontStyle: "italic",
             }}>
-              "{bio}"
+              &ldquo;{bio}&rdquo;
             </p>
           )}
         </div>
 
-        {/* Stats row */}
         <div style={{
           display: "flex",
           gap: "12px",
           flexWrap: "wrap",
           justifyContent: "center",
         }}>
-          <StatPill label="Logs" value="24" />
-          <StatPill label="Streak" value="6" />
-          <StatPill label="Saved" value="3" />
+          <StatPill label="Logs" value="0" />
+          <StatPill label="Streak" value="0" />
+          <StatPill label="Saved" value="0" />
         </div>
 
-        {/* Member since */}
         <p style={{
           fontSize: "11px",
           color: "#b0bcbc",
@@ -331,7 +329,6 @@ export default function ProfilePage() {
         <div style={{ ...cardStyle, padding: "20px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* Name row */}
             <div style={{ display: "flex", gap: "12px" }}>
               <div style={{ flex: 1 }}>
                 <InputField
@@ -353,18 +350,16 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Email — always disabled, managed via auth */}
             <InputField
               label="EMAIL"
               value={email}
-              placeholder="your@email.com"
+              placeholder="Linked to your account"
               disabled
             />
             <p style={{ fontSize: "11px", color: "#b0bcbc", marginTop: "-8px" }}>
               Email is managed through your account and cannot be changed here.
             </p>
 
-            {/* Bio */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{
                 fontSize: "12px",
@@ -407,7 +402,6 @@ export default function ProfilePage() {
 
           </div>
 
-          {/* Edit / Save button */}
           <div style={{ marginTop: "20px" }}>
             {!editMode ? (
               <button
@@ -440,42 +434,47 @@ export default function ProfilePage() {
               </button>
             ) : (
               <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  onClick={() => setEditMode(false)}
-                  style={{
-                    flex: 1,
-                    padding: "14px",
-                    borderRadius: "12px",
-                    border: "1.5px solid #e0dbd3",
-                    background: "transparent",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#8fa0a0",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
+                {hasProfile && (
+                  <button
+                    onClick={() => setEditMode(false)}
+                    style={{
+                      flex: 1,
+                      padding: "14px",
+                      borderRadius: "12px",
+                      border: "1.5px solid #e0dbd3",
+                      background: "transparent",
+                      fontSize: "14px",
+                      fontWeight: 700,
+                      color: "#8fa0a0",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
                 <button
                   onClick={handleSave}
+                  disabled={!firstName.trim()}
                   style={{
                     flex: 2,
                     padding: "14px",
                     borderRadius: "12px",
                     border: "none",
-                    background: saved
+                    background: !firstName.trim()
+                      ? "#e0dbd3"
+                      : saved
                       ? "linear-gradient(135deg, #a0b89f 0%, #5a9e57 100%)"
                       : GRADIENT,
                     fontSize: "14px",
                     fontWeight: 700,
                     color: "#ffffff",
-                    cursor: "pointer",
-                    boxShadow: "0 4px 16px rgba(95,168,211,0.3)",
+                    cursor: !firstName.trim() ? "not-allowed" : "pointer",
+                    boxShadow: firstName.trim() ? "0 4px 16px rgba(95,168,211,0.3)" : "none",
                     transition: "all 0.2s ease",
                     letterSpacing: "0.01em",
                   }}
                 >
-                  {saved ? "✓ Saved" : "Save changes"}
+                  {saved ? "✓ Saved" : "Save profile"}
                 </button>
               </div>
             )}
@@ -492,7 +491,6 @@ export default function ProfilePage() {
         <div style={{ ...cardStyle, padding: "20px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* University */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{
                 fontSize: "12px",
@@ -528,7 +526,6 @@ export default function ProfilePage() {
               </select>
             </div>
 
-            {/* Year of study */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <label style={{
                 fontSize: "12px",
@@ -583,10 +580,10 @@ export default function ProfilePage() {
           backgroundColor: "#e0dbd3",
         }}>
           {[
-            { label: "Total check-ins", value: "24", icon: "📋" },
-            { label: "Current streak", value: "6 days", icon: "🔥" },
-            { label: "Most logged mood", value: "Content", icon: "🌿" },
-            { label: "Top stressor", value: "Academic", icon: "📚" },
+            { label: "Total check-ins", value: "0",  icon: "📋" },
+            { label: "Current streak",  value: "0",  icon: "🔥" },
+            { label: "Most logged mood", value: "—", icon: "🌿" },
+            { label: "Top stressor",    value: "—",  icon: "📚" },
           ].map((stat, i) => (
             <div
               key={i}
@@ -596,13 +593,9 @@ export default function ProfilePage() {
                 display: "flex",
                 flexDirection: "column",
                 gap: "6px",
-                // Round the four outer corners only
-                borderRadius: i === 0
-                  ? "20px 0 0 0"
-                  : i === 1
-                  ? "0 20px 0 0"
-                  : i === 2
-                  ? "0 0 0 20px"
+                borderRadius: i === 0 ? "20px 0 0 0"
+                  : i === 1 ? "0 20px 0 0"
+                  : i === 2 ? "0 0 0 20px"
                   : "0 0 20px 0",
               }}
             >
@@ -617,11 +610,7 @@ export default function ProfilePage() {
               }}>
                 {stat.value}
               </span>
-              <span style={{
-                fontSize: "12px",
-                color: "#8fa0a0",
-                fontWeight: 500,
-              }}>
+              <span style={{ fontSize: "12px", color: "#8fa0a0", fontWeight: 500 }}>
                 {stat.label}
               </span>
             </div>

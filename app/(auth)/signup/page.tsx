@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 const GRADIENT = "linear-gradient(135deg, #C7B8EA 0%, #5FA8D3 100%)";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [consent, setConsent]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
+  const [hovered, setHovered]   = useState(false);
+  const [pressed, setPressed]   = useState(false);
 
-  const isFormValid = email.trim() && password.trim().length >= 8 && consent;
+  const isFormValid = !!(email.trim() && password.trim().length >= 8 && consent);
 
   const handleSignup = async () => {
     if (!isFormValid) return;
@@ -22,7 +22,9 @@ export default function SignupPage() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 900));
     setLoading(false);
-    router.push("/dashboard");
+    // Set session cookie — replaced with Supabase auth later
+    document.cookie = "aware_session=true; path=/; max-age=86400";
+    window.location.href = "/dashboard";
   };
 
   const inputStyle = (): React.CSSProperties => ({
@@ -50,10 +52,20 @@ export default function SignupPage() {
     e.currentTarget.style.backgroundColor = "#f9f9f9";
   };
 
+  const btnTransform = pressed
+    ? "scale(0.98)"
+    : hovered && isFormValid && !loading
+    ? "translateY(-1px)"
+    : "translateY(0)";
+
+  const btnShadow = hovered && isFormValid && !loading
+    ? "0 8px 24px rgba(95,168,211,0.45)"
+    : isFormValid && !loading
+    ? "0 4px 18px rgba(95,168,211,0.35)"
+    : "none";
+
   return (
     <div style={{ width: "100%", maxWidth: "420px", margin: "0 auto" }}>
-
-      {/* ── CARD ─────────────────────────────────────────────────── */}
       <div style={{
         backgroundColor: "#ffffff",
         borderRadius: "24px",
@@ -72,12 +84,7 @@ export default function SignupPage() {
           }}>
             Create account
           </h1>
-          <p style={{
-            fontSize: "14px",
-            color: "#8fa0a0",
-            fontWeight: 400,
-            lineHeight: 1.5,
-          }}>
+          <p style={{ fontSize: "14px", color: "#8fa0a0", fontWeight: 400, lineHeight: 1.5 }}>
             Your journey to self-awareness starts here.
           </p>
         </div>
@@ -146,32 +153,19 @@ export default function SignupPage() {
                 if (e.key === "Enter" && isFormValid) handleSignup();
               }}
             />
-            {/* Live password hint */}
             {password.length > 0 && password.length < 8 && (
-              <p style={{
-                fontSize: "11px",
-                color: "#9e7a6e",
-                fontWeight: 500,
-                marginTop: "2px",
-              }}>
+              <p style={{ fontSize: "11px", color: "#9e7a6e", fontWeight: 500, marginTop: "2px" }}>
                 {8 - password.length} more character{8 - password.length !== 1 ? "s" : ""} needed
               </p>
             )}
             {password.length >= 8 && (
-              <p style={{
-                fontSize: "11px",
-                color: "#5a9e57",
-                fontWeight: 500,
-                marginTop: "2px",
-              }}>
+              <p style={{ fontSize: "11px", color: "#5a9e57", fontWeight: 500, marginTop: "2px" }}>
                 ✓ Password looks good
               </p>
             )}
           </div>
 
-          {/* ── CONSENT ──────────────────────────────────────────────
-              8px top margin separates it from password field
-              Checkbox perfectly top-aligned with first line of text  */}
+          {/* ── CONSENT ──────────────────────────────────────────────── */}
           <div style={{
             marginTop: "8px",
             padding: "16px",
@@ -190,12 +184,7 @@ export default function SignupPage() {
               PRIVACY & DATA CONSENT
             </p>
 
-            <div style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "10px",
-            }}>
-              {/* Custom gradient checkbox */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
               <button
                 role="checkbox"
                 aria-checked={consent}
@@ -231,22 +220,12 @@ export default function SignupPage() {
                 )}
               </button>
 
-              {/* Consent text — links inline, no separate "View details" row */}
               <div>
-                <p style={{
-                  fontSize: "13px",
-                  color: "#5a6e6e",
-                  lineHeight: 1.65,
-                  fontWeight: 400,
-                }}>
+                <p style={{ fontSize: "13px", color: "#5a6e6e", lineHeight: 1.65, fontWeight: 400 }}>
                   I agree to the{" "}
                   <Link
                     href="#"
-                    style={{
-                      color: "#7b5ea7",
-                      fontWeight: 600,
-                      textDecoration: "none",
-                    }}
+                    style={{ color: "#7b5ea7", fontWeight: 600, textDecoration: "none" }}
                     onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
                   >
@@ -255,11 +234,7 @@ export default function SignupPage() {
                   {" "}and{" "}
                   <Link
                     href="#"
-                    style={{
-                      color: "#7b5ea7",
-                      fontWeight: 600,
-                      textDecoration: "none",
-                    }}
+                    style={{ color: "#7b5ea7", fontWeight: 600, textDecoration: "none" }}
                     onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
                   >
@@ -273,11 +248,14 @@ export default function SignupPage() {
 
         </div>
 
-        {/* ── CREATE ACCOUNT BUTTON ─────────────────────────────────
-            Semi-transparent until form valid, vibrant when ready    */}
+        {/* ── CREATE ACCOUNT BUTTON ─────────────────────────────────── */}
         <button
           onClick={handleSignup}
           disabled={!isFormValid || loading}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => { setHovered(false); setPressed(false); }}
+          onMouseDown={() => { if (isFormValid) setPressed(true); }}
+          onMouseUp={() => setPressed(false)}
           style={{
             width: "100%",
             height: "52px",
@@ -293,48 +271,18 @@ export default function SignupPage() {
             fontWeight: 600,
             letterSpacing: "0.5px",
             cursor: !isFormValid || loading ? "not-allowed" : "pointer",
-            boxShadow: isFormValid && !loading
-              ? "0 4px 18px rgba(95,168,211,0.35)"
-              : "none",
+            boxShadow: btnShadow,
+            transform: btnTransform,
             transition: "all 0.25s ease",
             marginTop: "24px",
             marginBottom: "28px",
-          }}
-          onMouseEnter={(e) => {
-            if (isFormValid && !loading) {
-              e.currentTarget.style.filter = "brightness(1.07)";
-              e.currentTarget.style.transform = "translateY(-1px)";
-              e.currentTarget.style.boxShadow = "0 8px 24px rgba(95,168,211,0.45)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.filter = "brightness(1)";
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = isFormValid && !loading
-              ? "0 4px 18px rgba(95,168,211,0.35)"
-              : "none";
-          }}
-          onMouseDown={(e) => {
-            if (isFormValid && !loading) {
-              e.currentTarget.style.transform = "scale(0.98)";
-            }
-          }}
-          onMouseUp={(e) => {
-            if (isFormValid && !loading) {
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }
           }}
         >
           {loading ? "Creating account…" : "Create account"}
         </button>
 
         {/* ── FOOTER ───────────────────────────────────────────────── */}
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "12px",
-        }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
           <p style={{ fontSize: "14px", color: "#5a6e6e", fontWeight: 400 }}>
             Already have an account?{" "}
             <Link
@@ -353,8 +301,6 @@ export default function SignupPage() {
               Sign in here
             </Link>
           </p>
-
-          {/* De-emphasised privacy note */}
           <p style={{
             fontSize: "11px",
             color: "#b0bcbc",

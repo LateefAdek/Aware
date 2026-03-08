@@ -22,6 +22,8 @@ export default function LoginPage() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 800));
     setLoading(false);
+    // Set session cookie — replaced with Supabase auth later
+    document.cookie = "aware_session=true; path=/; max-age=86400";
     window.location.href = "/dashboard";
   };
 
@@ -37,8 +39,6 @@ export default function LoginPage() {
 
   return (
     <div style={{ width: "100%", maxWidth: "420px", margin: "0 auto" }}>
-
-      {/* ── CARD ─────────────────────────────────────────────────── */}
       <div style={{
         backgroundColor: "#ffffff",
         borderRadius: "24px",
@@ -57,12 +57,7 @@ export default function LoginPage() {
           }}>
             Welcome back
           </h1>
-          <p style={{
-            fontSize: "14px",
-            color: "#8fa0a0",
-            fontWeight: 400,
-            lineHeight: 1.5,
-          }}>
+          <p style={{ fontSize: "14px", color: "#8fa0a0", fontWeight: 400, lineHeight: 1.5 }}>
             Check in with yourself today.
           </p>
         </div>
@@ -129,11 +124,7 @@ export default function LoginPage() {
 
           {/* Password */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <label style={{
                 fontSize: "12px",
                 fontWeight: 600,
@@ -215,12 +206,7 @@ export default function LoginPage() {
         </button>
 
         {/* ── FOOTER ───────────────────────────────────────────────── */}
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "12px",
-        }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
           <p style={{ fontSize: "14px", color: "#5a6e6e", fontWeight: 400 }}>
             Don&apos;t have an account?{" "}
             <Link

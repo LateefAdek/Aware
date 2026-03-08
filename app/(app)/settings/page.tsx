@@ -206,10 +206,9 @@ export default function SettingsPage() {
     setExportDone(true);
     setTimeout(() => setExportDone(false), 3000);
   };
-
   const handleLogout = () => {
-    // In production this calls supabase.auth.signOut()
-    router.push("/login");
+    document.cookie = "aware_session=; path=/; max-age=0";
+    window.location.href = "/login";
   };
 
   const isContactValid = contactName.trim() && contactPhone.trim();
