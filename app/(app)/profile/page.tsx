@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const GRADIENT = "linear-gradient(135deg, #C7B8EA 0%, #5FA8D3 100%)";
 
@@ -177,6 +177,7 @@ const UNIVERSITIES = [
   "Obafemi Awolowo University",
   "University of Benin",
   "University of Abuja",
+  "Lagos State University",
   "Other",
 ];
 
@@ -191,26 +192,96 @@ const YEAR_OPTIONS = [
   "Postgraduate",
 ];
 
+const STORAGE_KEY = "aware_profile";
+
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  university: string;
+  year: string;
+  bio: string;
+}
+
+// Load profile from localStorage
+function loadProfile(): ProfileData {
+  if (typeof window === "undefined") return {
+    firstName: "",
+    lastName: "",
+    university: "Select your university",
+    year: "Select year",
+    bio: "",
+  };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as ProfileData;
+  } catch {
+    // ignore
+  }
+  return {
+    firstName: "",
+    lastName: "",
+    university: "Select your university",
+    year: "Select year",
+    bio: "",
+  };
+}
+
+// Save profile to localStorage
+function saveProfile(data: ProfileData) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // ignore
+  }
+}
+
 export default function ProfilePage() {
-  // All empty by default — filled in by the user
   const [firstName, setFirstName]   = useState("");
   const [lastName, setLastName]     = useState("");
-  const [email]                     = useState("");
   const [university, setUniversity] = useState("Select your university");
   const [year, setYear]             = useState("Select year");
   const [bio, setBio]               = useState("");
   const [saved, setSaved]           = useState(false);
-  const [editMode, setEditMode]     = useState(true); // start in edit mode for new users
+  const [editMode, setEditMode]     = useState(false);
+  const [loaded, setLoaded]         = useState(false);
 
-  const fullName = `${firstName} ${lastName}`.trim();
+  // Load saved profile on first render
+  useEffect(() => {
+    const profile = loadProfile();
+    setFirstName(profile.firstName);
+    setLastName(profile.lastName);
+    setUniversity(profile.university);
+    setYear(profile.year);
+    setBio(profile.bio);
+    // If no name saved yet, open in edit mode automatically
+    setEditMode(!profile.firstName);
+    setLoaded(true);
+  }, []);
+
+  const fullName    = `${firstName} ${lastName}`.trim();
+  const hasProfile  = !!(firstName || lastName);
 
   const handleSave = () => {
+    const data: ProfileData = { firstName, lastName, university, year, bio };
+    saveProfile(data);
     setSaved(true);
     setEditMode(false);
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const hasProfile = firstName || lastName;
+  const handleCancel = () => {
+    // Restore from storage so unsaved edits are discarded
+    const profile = loadProfile();
+    setFirstName(profile.firstName);
+    setLastName(profile.lastName);
+    setUniversity(profile.university);
+    setYear(profile.year);
+    setBio(profile.bio);
+    setEditMode(false);
+  };
+
+  // Don't render until localStorage is loaded to avoid flicker
+  if (!loaded) return null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
@@ -300,22 +371,13 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <div style={{
-          display: "flex",
-          gap: "12px",
-          flexWrap: "wrap",
-          justifyContent: "center",
-        }}>
-          <StatPill label="Logs" value="0" />
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+          <StatPill label="Logs"   value="0" />
           <StatPill label="Streak" value="0" />
-          <StatPill label="Saved" value="0" />
+          <StatPill label="Saved"  value="0" />
         </div>
 
-        <p style={{
-          fontSize: "11px",
-          color: "#b0bcbc",
-          fontStyle: "italic",
-        }}>
+        <p style={{ fontSize: "11px", color: "#b0bcbc", fontStyle: "italic" }}>
           Member since March 2026
         </p>
       </div>
@@ -352,7 +414,7 @@ export default function ProfilePage() {
 
             <InputField
               label="EMAIL"
-              value={email}
+              value=""
               placeholder="Linked to your account"
               disabled
             />
@@ -402,6 +464,7 @@ export default function ProfilePage() {
 
           </div>
 
+          {/* Edit / Save buttons */}
           <div style={{ marginTop: "20px" }}>
             {!editMode ? (
               <button
@@ -436,7 +499,7 @@ export default function ProfilePage() {
               <div style={{ display: "flex", gap: "10px" }}>
                 {hasProfile && (
                   <button
-                    onClick={() => setEditMode(false)}
+                    onClick={handleCancel}
                     style={{
                       flex: 1,
                       padding: "14px",
@@ -502,7 +565,11 @@ export default function ProfilePage() {
               </label>
               <select
                 value={university}
-                onChange={(e) => setUniversity(e.target.value)}
+                onChange={(e) => {
+                  setUniversity(e.target.value);
+                  const current = loadProfile();
+                  saveProfile({ ...current, university: e.target.value });
+                }}
                 style={{
                   padding: "12px 14px",
                   borderRadius: "12px",
@@ -537,7 +604,11 @@ export default function ProfilePage() {
               </label>
               <select
                 value={year}
-                onChange={(e) => setYear(e.target.value)}
+                onChange={(e) => {
+                  setYear(e.target.value);
+                  const current = loadProfile();
+                  saveProfile({ ...current, year: e.target.value });
+                }}
                 style={{
                   padding: "12px 14px",
                   borderRadius: "12px",
@@ -580,10 +651,10 @@ export default function ProfilePage() {
           backgroundColor: "#e0dbd3",
         }}>
           {[
-            { label: "Total check-ins", value: "0",  icon: "📋" },
-            { label: "Current streak",  value: "0",  icon: "🔥" },
+            { label: "Total check-ins",  value: "0", icon: "📋" },
+            { label: "Current streak",   value: "0", icon: "🔥" },
             { label: "Most logged mood", value: "—", icon: "🌿" },
-            { label: "Top stressor",    value: "—",  icon: "📚" },
+            { label: "Top stressor",     value: "—", icon: "📚" },
           ].map((stat, i) => (
             <div
               key={i}
